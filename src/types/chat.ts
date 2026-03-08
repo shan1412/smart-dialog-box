@@ -1,6 +1,6 @@
 export type MessageRole = "user" | "assistant" | "system";
 
-export type ContentType = "text" | "chart" | "image" | "video" | "pdf";
+export type ContentType = "text" | "chart" | "image" | "video" | "pdf" | "question";
 
 export interface ChartData {
   type: "line" | "bar" | "area" | "pie" | "scatter";
@@ -10,10 +10,23 @@ export interface ChartData {
   title?: string;
 }
 
+export interface QuestionOption {
+  label: string;
+  description?: string;
+}
+
+export interface QuestionData {
+  question: string;
+  options: QuestionOption[];
+  multiSelect?: boolean;
+  onSubmitLabel?: string;
+}
+
 export interface RichContent {
   type: ContentType;
   text?: string;
   chartData?: ChartData;
+  questionData?: QuestionData;
   url?: string;
   alt?: string;
   mimeType?: string;
