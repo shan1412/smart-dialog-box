@@ -5,7 +5,11 @@ import {
   PieChart, Pie, Cell, ScatterChart, Scatter,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import { Check } from "lucide-react";
+import { Check, Copy, CheckCheck } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 const CHART_COLORS = [
   "hsl(185, 80%, 50%)", "hsl(280, 70%, 60%)", "hsl(45, 90%, 55%)",
