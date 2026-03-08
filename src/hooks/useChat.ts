@@ -425,14 +425,19 @@ export function useChat() {
   }, []);
 
   useEffect(() => {
-    return () => wsRef.current?.close();
+    return () => {
+      wsRef.current?.close();
+      abortRef.current?.abort();
+    };
   }, []);
 
   return {
     messages,
     isLoading,
+    streamingMessageId,
     connection,
     sendMessage,
+    stopStreaming,
     updateConnection,
     conversations,
     activeId,

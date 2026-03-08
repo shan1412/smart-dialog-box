@@ -39,13 +39,14 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
-export type ConnectionType = "webhook" | "websocket";
+export type ConnectionType = "webhook" | "websocket" | "sse";
 
 export interface ConnectionConfig {
   type: ConnectionType;
   url: string;
   headers?: Record<string, string>;
   isConnected: boolean;
+  streamTokens?: boolean;
 }
 
 export interface Conversation {
