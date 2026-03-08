@@ -235,6 +235,105 @@ export function useChat() {
     [connection, messages, addMessage]
   );
 
+  const sendSSE = useCallback(
+    async (text: string) => {
+      setIsLoading(true);
+      const msgId = crypto.randomUUID();
+      setStreamingMessageId(msgId);
+
+      // Add empty assistant message that will be streamed into
+      updateActiveMessages((prev) => [
+        ...prev,
+        { id: msgId, role: "assistant" as const, content: [{ type: "text" as const, text: "" }], timestamp: new Date() },
+      ]);
+
+      try {
+        abortRef.current = new AbortController();
+        const res = await fetch(connection.url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...(connection.headers || {}) },
+          body: JSON.stringify({ message: text, stream: true, history: messages.map((m) => ({ role: m.role, content: m.content })) }),
+          signal: abortRef.current.signal,
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.body) throw new Error("No response body");
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let accumulated = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const payload = line.slice(6).trim();
+              if (payload === "[DONE]") break;
+
+              try {
+                const parsed = JSON.parse(payload);
+                // Support OpenAI-style: { choices: [{ delta: { content } }] }
+                const token =
+                  parsed?.choices?.[0]?.delta?.content ??
+                  parsed?.delta?.content ??
+                  parsed?.content ??
+                  parsed?.token ??
+                  parsed?.text ??
+                  (typeof parsed === "string" ? parsed : "");
+                accumulated += token;
+              } catch {
+                // Plain text SSE token
+                accumulated += payload;
+              }
+
+              // Update the streaming message in-place
+              updateActiveMessages((prev) =>
+                prev.map((m) =>
+                  m.id === msgId
+                    ? { ...m, content: [{ type: "text" as const, text: accumulated }] }
+                    : m
+                )
+              );
+            }
+          }
+        }
+
+        // Final parse: check if the accumulated text contains rich content (JSON)
+        try {
+          const finalParsed = JSON.parse(accumulated);
+          const richContent = parseAssistantResponse(finalParsed);
+          updateActiveMessages((prev) =>
+            prev.map((m) => (m.id === msgId ? { ...m, content: richContent } : m))
+          );
+        } catch {
+          // It's plain text/markdown, keep as-is
+        }
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          updateActiveMessages((prev) =>
+            prev.map((m) =>
+              m.id === msgId
+                ? { ...m, role: "system" as const, content: [{ type: "text" as const, text: `Error: ${err instanceof Error ? err.message : "Stream failed"}` }] }
+                : m
+            )
+          );
+        }
+      } finally {
+        setIsLoading(false);
+        setStreamingMessageId(null);
+        abortRef.current = null;
+      }
+    },
+    [connection, messages, addMessage, updateActiveMessages]
+  );
+
   const connectWebSocket = useCallback(() => {
     if (wsRef.current) wsRef.current.close();
     const ws = new WebSocket(connection.url);
