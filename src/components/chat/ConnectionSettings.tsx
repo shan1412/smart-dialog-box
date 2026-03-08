@@ -52,7 +52,7 @@ export function ConnectionSettings({ config, onUpdate }: ConnectionSettingsProps
           <div className="space-y-1">
             <label className="text-xs font-mono text-muted-foreground">Transport</label>
             <div className="flex gap-2">
-              {(["webhook", "websocket"] as const).map((t) => (
+              {(["webhook", "sse", "websocket"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setType(t)}
@@ -62,8 +62,8 @@ export function ConnectionSettings({ config, onUpdate }: ConnectionSettingsProps
                       : "border-border text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {t === "webhook" ? <Globe className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5" />}
-                  {t}
+                  {t === "webhook" ? <Globe className="w-3.5 h-3.5" /> : t === "sse" ? <Zap className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5" />}
+                  {t === "sse" ? "SSE" : t}
                 </button>
               ))}
             </div>
