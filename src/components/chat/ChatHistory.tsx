@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Conversation } from "@/types/chat";
-import { Plus, MessageSquare, Trash2, Pencil, Check, X } from "lucide-react";
+import { Plus, MessageSquare, Trash2, Pencil, Check, X, Search } from "lucide-react";
 
 interface ChatHistoryProps {
   conversations: Conversation[];
