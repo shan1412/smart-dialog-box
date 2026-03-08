@@ -4,11 +4,11 @@ import { MessageBubble } from "./MessageBubble";
 import { ChatInput } from "./ChatInput";
 import { ConnectionSettings } from "./ConnectionSettings";
 import { ChatHistory } from "./ChatHistory";
-import { MessageSquare, Loader2, PanelLeftClose, PanelLeft } from "lucide-react";
+import { MessageSquare, Loader2, PanelLeftClose, PanelLeft, Square } from "lucide-react";
 
 export function ChatWindow() {
   const {
-    messages, isLoading, connection, sendMessage, updateConnection,
+    messages, isLoading, streamingMessageId, connection, sendMessage, stopStreaming, updateConnection,
     conversations, activeId, newChat, selectConversation, deleteConversation, renameConversation,
   } = useChat();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -79,7 +79,7 @@ export function ChatWindow() {
           {messages.map((msg) => (
             <MessageBubble key={msg.id} message={msg} />
           ))}
-          {isLoading && (
+          {isLoading && !streamingMessageId && (
             <div className="flex items-center gap-3 px-4 py-4 bg-chat-assistant">
               <div className="w-8 h-8 rounded-md bg-secondary flex items-center justify-center border border-border">
                 <Loader2 className="w-4 h-4 text-accent animate-spin" />
@@ -90,7 +90,19 @@ export function ChatWindow() {
         </div>
 
         {/* Input */}
-        <ChatInput onSend={sendMessage} disabled={isLoading} />
+        <div className="relative">
+          {streamingMessageId && (
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-10">
+              <button
+                onClick={stopStreaming}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border text-xs font-mono text-muted-foreground hover:text-foreground transition-colors shadow-lg"
+              >
+                <Square className="w-3 h-3 fill-current" /> Stop generating
+              </button>
+            </div>
+          )}
+          <ChatInput onSend={sendMessage} disabled={isLoading} />
+        </div>
       </div>
     </div>
   );
