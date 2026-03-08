@@ -63,6 +63,27 @@ const DEMO_MESSAGES: ChatMessage[] = [
     ],
     timestamp: new Date(),
   },
+  {
+    id: "demo-5",
+    role: "assistant",
+    content: [
+      { type: "text", text: "And interactive questions/forms:" },
+      {
+        type: "question",
+        questionData: {
+          question: "What types of content should admin be able to upload?",
+          options: [
+            { label: "Projects", description: "Project showcase with images, title, description" },
+            { label: "Blogs/Articles", description: "Text-based content with images" },
+            { label: "Video Tutorials", description: "Video uploads or YouTube/Vimeo embeds" },
+            { label: "All of the above", description: "Full content management for all types" },
+          ],
+          multiSelect: false,
+        },
+      },
+    ],
+    timestamp: new Date(),
+  },
 ];
 
 function parseAssistantResponse(data: unknown): RichContent[] {
