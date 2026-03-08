@@ -161,7 +161,7 @@ function InteractiveChart({ chartData }: { chartData: ChartData }) {
 export function RichContentRenderer({ content }: { content: RichContent }) {
   switch (content.type) {
     case "text":
-      return <p className="whitespace-pre-wrap leading-relaxed">{content.text}</p>;
+      return <MarkdownRenderer text={content.text || ""} />;
 
     case "chart":
       return content.chartData ? <InteractiveChart chartData={content.chartData} /> : null;
