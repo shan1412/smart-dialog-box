@@ -358,6 +358,10 @@ export function useChat() {
     wsRef.current = ws;
   }, [connection.url, addMessage]);
 
+  const stopStreaming = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
+
   const sendMessage = useCallback(
     (text: string) => {
       addMessage({
@@ -367,13 +371,15 @@ export function useChat() {
         timestamp: new Date(),
       });
       if (!connection.url) return;
-      if (connection.type === "webhook") {
+      if (connection.type === "sse") {
+        sendSSE(text);
+      } else if (connection.type === "webhook") {
         sendWebhook(text);
       } else if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ message: text }));
       }
     },
-    [connection, addMessage, sendWebhook]
+    [connection, addMessage, sendWebhook, sendSSE]
   );
 
   const updateConnection = useCallback(
