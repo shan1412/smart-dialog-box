@@ -31,6 +31,17 @@ export function ChatHistory({
 }: ChatHistoryProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return conversations;
+    const q = search.toLowerCase();
+    return conversations.filter(
+      (c) =>
+        c.title.toLowerCase().includes(q) ||
+        c.messages.some((m) => m.content.toLowerCase().includes(q))
+    );
+  }, [conversations, search]);
 
   const startRename = (id: string, title: string) => {
     setEditingId(id);
@@ -46,7 +57,7 @@ export function ChatHistory({
 
   // Group conversations by date
   const grouped: Record<string, Conversation[]> = {};
-  conversations.forEach((c) => {
+  filtered.forEach((c) => {
     const label = formatDate(c.updatedAt);
     if (!grouped[label]) grouped[label] = [];
     grouped[label].push(c);
