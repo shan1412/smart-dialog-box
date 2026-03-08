@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Conversation } from "@/types/chat";
-import { Plus, MessageSquare, Trash2, Pencil, Check, X } from "lucide-react";
+import { Plus, MessageSquare, Trash2, Pencil, Check, X, Search } from "lucide-react";
 
 interface ChatHistoryProps {
   conversations: Conversation[];
@@ -31,6 +31,17 @@ export function ChatHistory({
 }: ChatHistoryProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return conversations;
+    const q = search.toLowerCase();
+    return conversations.filter(
+      (c) =>
+        c.title.toLowerCase().includes(q) ||
+        c.messages.some((m) => m.content.some((block) => block.text && block.text.toLowerCase().includes(q)))
+    );
+  }, [conversations, search]);
 
   const startRename = (id: string, title: string) => {
     setEditingId(id);
@@ -46,7 +57,7 @@ export function ChatHistory({
 
   // Group conversations by date
   const grouped: Record<string, Conversation[]> = {};
-  conversations.forEach((c) => {
+  filtered.forEach((c) => {
     const label = formatDate(c.updatedAt);
     if (!grouped[label]) grouped[label] = [];
     grouped[label].push(c);
@@ -63,6 +74,19 @@ export function ChatHistory({
           <Plus className="w-4 h-4 text-accent" />
           New Chat
         </button>
+      </div>
+
+      {/* Search */}
+      <div className="px-3 pb-2">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search conversations…"
+            className="w-full pl-8 pr-3 py-2 rounded-lg bg-secondary border border-border text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
       </div>
 
       {/* Conversation List */}
