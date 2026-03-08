@@ -4,7 +4,7 @@ import { MessageBubble } from "./MessageBubble";
 import { ChatInput } from "./ChatInput";
 import { ConnectionSettings } from "./ConnectionSettings";
 import { ChatHistory } from "./ChatHistory";
-import { MessageSquare, Loader2, PanelLeftClose, PanelLeft } from "lucide-react";
+import { MessageSquare, Loader2, PanelLeftClose, PanelLeft, Square } from "lucide-react";
 
 export function ChatWindow() {
   const {
