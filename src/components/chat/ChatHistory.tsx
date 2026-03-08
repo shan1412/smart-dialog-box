@@ -39,7 +39,7 @@ export function ChatHistory({
     return conversations.filter(
       (c) =>
         c.title.toLowerCase().includes(q) ||
-        c.messages.some((m) => m.content.toLowerCase().includes(q))
+        c.messages.some((m) => typeof m.content === "string" && m.content.toLowerCase().includes(q))
     );
   }, [conversations, search]);
 
