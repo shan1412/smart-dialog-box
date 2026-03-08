@@ -8,7 +8,7 @@ import { MessageSquare, Loader2, PanelLeftClose, PanelLeft, Square } from "lucid
 
 export function ChatWindow() {
   const {
-    messages, isLoading, connection, sendMessage, updateConnection,
+    messages, isLoading, streamingMessageId, connection, sendMessage, stopStreaming, updateConnection,
     conversations, activeId, newChat, selectConversation, deleteConversation, renameConversation,
   } = useChat();
   const scrollRef = useRef<HTMLDivElement>(null);
