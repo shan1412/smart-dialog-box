@@ -76,6 +76,19 @@ export function ChatHistory({
         </button>
       </div>
 
+      {/* Search */}
+      <div className="px-3 pb-2">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search conversations…"
+            className="w-full pl-8 pr-3 py-2 rounded-lg bg-secondary border border-border text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
+      </div>
+
       {/* Conversation List */}
       <div className="flex-1 overflow-y-auto scrollbar-thin px-2 pb-3 space-y-4">
         {Object.entries(grouped).map(([label, convos]) => (
