@@ -34,3 +34,11 @@ export interface ConnectionConfig {
   headers?: Record<string, string>;
   isConnected: boolean;
 }
+
+export interface Conversation {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: Date;
+  updatedAt: Date;
+}

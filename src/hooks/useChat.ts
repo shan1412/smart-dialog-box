@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { ChatMessage, ConnectionConfig, RichContent } from "@/types/chat";
+import { ChatMessage, ConnectionConfig, RichContent, Conversation } from "@/types/chat";
 
 const DEMO_MESSAGES: ChatMessage[] = [
   {
@@ -74,11 +74,7 @@ function parseAssistantResponse(data: unknown): RichContent[] {
       return [{ type: "text", text: data }];
     }
   }
-
-  if (Array.isArray(data)) {
-    return data as RichContent[];
-  }
-
+  if (Array.isArray(data)) return data as RichContent[];
   if (typeof data === "object" && data !== null) {
     const obj = data as Record<string, unknown>;
     if (obj.content && Array.isArray(obj.content)) return obj.content as RichContent[];
@@ -86,12 +82,55 @@ function parseAssistantResponse(data: unknown): RichContent[] {
     if (obj.text && typeof obj.text === "string") return [{ type: "text", text: obj.text }];
     return [{ type: "text", text: JSON.stringify(data, null, 2) }];
   }
-
   return [{ type: "text", text: String(data) }];
 }
 
+function loadConversations(): Conversation[] {
+  try {
+    const raw = localStorage.getItem("chat-conversations");
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return parsed.map((c: Conversation) => ({
+      ...c,
+      createdAt: new Date(c.createdAt),
+      updatedAt: new Date(c.updatedAt),
+      messages: c.messages.map((m: ChatMessage) => ({ ...m, timestamp: new Date(m.timestamp) })),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function saveConversations(convos: Conversation[]) {
+  localStorage.setItem("chat-conversations", JSON.stringify(convos));
+}
+
+function createNewConversation(): Conversation {
+  return {
+    id: crypto.randomUUID(),
+    title: "New Chat",
+    messages: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+}
+
+function deriveTitle(messages: ChatMessage[]): string {
+  const firstUser = messages.find((m) => m.role === "user");
+  if (!firstUser) return "New Chat";
+  const text = firstUser.content.find((c) => c.type === "text")?.text || "";
+  return text.length > 40 ? text.substring(0, 40) + "…" : text || "New Chat";
+}
+
 export function useChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>(DEMO_MESSAGES);
+  const [conversations, setConversations] = useState<Conversation[]>(() => {
+    const loaded = loadConversations();
+    return loaded.length > 0 ? loaded : [{ ...createNewConversation(), messages: DEMO_MESSAGES }];
+  });
+  const [activeId, setActiveId] = useState<string>(() => {
+    const loaded = loadConversations();
+    return loaded.length > 0 ? loaded[0].id : conversations[0].id;
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [connection, setConnection] = useState<ConnectionConfig>({
     type: "webhook",
@@ -101,9 +140,38 @@ export function useChat() {
   });
   const wsRef = useRef<WebSocket | null>(null);
 
-  const addMessage = useCallback((msg: ChatMessage) => {
-    setMessages((prev) => [...prev, msg]);
-  }, []);
+  const activeConversation = conversations.find((c) => c.id === activeId) || conversations[0];
+  const messages = activeConversation?.messages || [];
+
+  // Persist conversations
+  useEffect(() => {
+    saveConversations(conversations);
+  }, [conversations]);
+
+  const updateActiveMessages = useCallback(
+    (updater: (prev: ChatMessage[]) => ChatMessage[]) => {
+      setConversations((prev) =>
+        prev.map((c) => {
+          if (c.id !== activeId) return c;
+          const newMessages = updater(c.messages);
+          return {
+            ...c,
+            messages: newMessages,
+            title: deriveTitle(newMessages),
+            updatedAt: new Date(),
+          };
+        })
+      );
+    },
+    [activeId]
+  );
+
+  const addMessage = useCallback(
+    (msg: ChatMessage) => {
+      updateActiveMessages((prev) => [...prev, msg]);
+    },
+    [updateActiveMessages]
+  );
 
   const sendWebhook = useCallback(
     async (text: string) => {
@@ -167,9 +235,7 @@ export function useChat() {
         content: [{ type: "text", text }],
         timestamp: new Date(),
       });
-
-      if (!connection.url) return; // demo mode
-
+      if (!connection.url) return;
       if (connection.type === "webhook") {
         sendWebhook(text);
       } else if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -189,9 +255,53 @@ export function useChat() {
     [connectWebSocket]
   );
 
+  const newChat = useCallback(() => {
+    const convo = createNewConversation();
+    setConversations((prev) => [convo, ...prev]);
+    setActiveId(convo.id);
+  }, []);
+
+  const selectConversation = useCallback((id: string) => {
+    setActiveId(id);
+  }, []);
+
+  const deleteConversation = useCallback(
+    (id: string) => {
+      setConversations((prev) => {
+        const filtered = prev.filter((c) => c.id !== id);
+        if (filtered.length === 0) {
+          const fresh = createNewConversation();
+          setActiveId(fresh.id);
+          return [fresh];
+        }
+        if (activeId === id) setActiveId(filtered[0].id);
+        return filtered;
+      });
+    },
+    [activeId]
+  );
+
+  const renameConversation = useCallback((id: string, title: string) => {
+    setConversations((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, title } : c))
+    );
+  }, []);
+
   useEffect(() => {
     return () => wsRef.current?.close();
   }, []);
 
-  return { messages, isLoading, connection, sendMessage, updateConnection };
+  return {
+    messages,
+    isLoading,
+    connection,
+    sendMessage,
+    updateConnection,
+    conversations,
+    activeId,
+    newChat,
+    selectConversation,
+    deleteConversation,
+    renameConversation,
+  };
 }
