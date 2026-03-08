@@ -84,6 +84,14 @@ const DEMO_MESSAGES: ChatMessage[] = [
     ],
     timestamp: new Date(),
   },
+  {
+    id: "demo-6",
+    role: "assistant",
+    content: [
+      { type: "text", text: "I also support **Markdown** with `syntax highlighting`:\n\n```python\ndef hello(name: str) -> str:\n    \"\"\"Greet someone.\"\"\"\n    return f\"Hello, {name}!\"\n\nprint(hello(\"World\"))\n```\n\n> Blockquotes, **bold**, *italic*, and [links](https://example.com) all work.\n\n| Feature | Status |\n|---------|--------|\n| Charts | ✅ |\n| Markdown | ✅ |\n| Questions | ✅ |" },
+    ],
+    timestamp: new Date(),
+  },
 ];
 
 function parseAssistantResponse(data: unknown): RichContent[] {

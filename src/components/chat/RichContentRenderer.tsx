@@ -5,7 +5,11 @@ import {
   PieChart, Pie, Cell, ScatterChart, Scatter,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import { Check } from "lucide-react";
+import { Check, Copy, CheckCheck } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 const CHART_COLORS = [
   "hsl(185, 80%, 50%)", "hsl(280, 70%, 60%)", "hsl(45, 90%, 55%)",
@@ -89,6 +93,62 @@ function InteractiveQuestion({ questionData, onAnswer }: { questionData: Questio
   );
 }
 
+function CodeBlock({ language, value }: { language: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="relative group my-2 rounded-lg overflow-hidden border border-border">
+      <div className="flex items-center justify-between bg-secondary px-3 py-1.5">
+        <span className="text-xs font-mono text-muted-foreground">{language || "code"}</span>
+        <button onClick={copy} className="text-muted-foreground hover:text-foreground transition-colors">
+          {copied ? <CheckCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+        </button>
+      </div>
+      <SyntaxHighlighter
+        style={oneDark}
+        language={language || "text"}
+        PreTag="div"
+        customStyle={{ margin: 0, borderRadius: 0, background: "hsl(220, 18%, 10%)" }}
+      >
+        {value}
+      </SyntaxHighlighter>
+    </div>
+  );
+}
+
+function MarkdownRenderer({ text }: { text: string }) {
+  return (
+    <div className="prose prose-invert prose-sm max-w-none leading-relaxed
+      prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1
+      prose-a:text-accent prose-a:no-underline hover:prose-a:underline
+      prose-strong:text-foreground prose-code:text-accent prose-code:bg-secondary
+      prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono
+      prose-blockquote:border-accent prose-blockquote:text-muted-foreground
+      prose-table:border-border prose-th:border-border prose-td:border-border
+      prose-th:px-3 prose-th:py-1.5 prose-td:px-3 prose-td:py-1.5">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          code({ className, children, ...props }) {
+            const match = /language-(\w+)/.exec(className || "");
+            const value = String(children).replace(/\n$/, "");
+            if (match) {
+              return <CodeBlock language={match[1]} value={value} />;
+            }
+            return <code className={className} {...props}>{children}</code>;
+          },
+        }}
+      >
+        {text}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
 function InteractiveChart({ chartData }: { chartData: ChartData }) {
   const { type, data, xKey = "name", yKeys = [], title } = chartData;
   const keys = yKeys.length > 0 ? yKeys : Object.keys(data[0] || {}).filter(k => k !== xKey);
@@ -157,7 +217,7 @@ function InteractiveChart({ chartData }: { chartData: ChartData }) {
 export function RichContentRenderer({ content }: { content: RichContent }) {
   switch (content.type) {
     case "text":
-      return <p className="whitespace-pre-wrap leading-relaxed">{content.text}</p>;
+      return <MarkdownRenderer text={content.text || ""} />;
 
     case "chart":
       return content.chartData ? <InteractiveChart chartData={content.chartData} /> : null;
