@@ -161,13 +161,16 @@ export function useChat() {
     return loaded.length > 0 ? loaded[0].id : conversations[0].id;
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [connection, setConnection] = useState<ConnectionConfig>({
     type: "webhook",
     url: "",
     headers: {},
     isConnected: false,
+    streamTokens: false,
   });
   const wsRef = useRef<WebSocket | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const activeConversation = conversations.find((c) => c.id === activeId) || conversations[0];
   const messages = activeConversation?.messages || [];
